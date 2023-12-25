@@ -40,6 +40,7 @@ class GridWorldEnv(gym.Env):
         """
         super(GridWorldEnv, self).__init__()
 
+        # Define default rewards for each cell type
         default_rewards_map = {
             CellType.TARGET: 0.0,
             CellType.START: -1.0,
@@ -49,17 +50,23 @@ class GridWorldEnv(gym.Env):
             CellType.EMPTY: -1.0
         }
 
+        # Use the provided rewards map or default if none is provided
         self.rewards_map = rewards_map if rewards_map else default_rewards_map
+        # Load the layout from the specified file
         self.layout = self._load_layout(layout_file)
+        # Determine grid size for defining spaces
         self.grid_size_x, self.grid_size_y = self.layout.shape
 
+        # Define action and observation spaces
         self.action_space = spaces.Discrete(len(Action))
         self.observation_space = spaces.Box(low=0, high=max(self.grid_size_x, self.grid_size_y), 
                                             shape=(2,), dtype=np.int32)
 
+        # Initialize state and success probability
         self.state = None
         self.success_prob = success_prob
 
+        # Setup for rendering with Pygame
         self.window_size = (self.grid_size_y * 50, self.grid_size_x * 50)
         pygame.init()
         self.screen = pygame.display.set_mode(self.window_size)
@@ -67,30 +74,27 @@ class GridWorldEnv(gym.Env):
 
     def _load_layout(self, filename):
         """
-        Load the grid layout from a file.
-
+        Load the grid layout from a file, converting each cell to a CellType enum.
         Parameters:
         filename (str): The file path for the grid layout.
         """
         with open(filename, 'r') as f:
             layout = [list(line.strip()) for line in f.readlines()]
-        return np.array(layout, dtype=CellType)
+        # Convert string representations to CellType enums
+        return np.array([[CellType(cell) for cell in row] for row in layout])
 
     def get_reward(self, state):
         """
         Get the reward for a given state.
-
         Parameters:
         state (tuple): The state to retrieve the reward for.
         """
-        cell_type_str = self.layout[state[0], state[1]]
-        cell_type_enum = CellType(cell_type_str)
+        cell_type_enum = self.layout[state[0], state[1]]
         return self.rewards_map[cell_type_enum]
-
+    
     def get_type(self, state):
         """
         Get the type of a cell in a given state.
-
         Parameters:
         state (tuple): The state to get the cell type for.
         """
@@ -99,19 +103,18 @@ class GridWorldEnv(gym.Env):
     def find_positions(self, cell_type):
         """
         Find all positions of a given cell type in the grid.
-
         Parameters:
-        cell_type (str): The cell type to find positions for.
+        cell_type (CellType): The cell type to find positions for.
         """
         return [(i, j) for i in range(self.grid_size_x) for j in range(self.grid_size_y) if self.layout[i, j] == cell_type]
 
     def get_terminal_states(self):
         """Get all states that are considered terminal (end of episode)."""
-        return self.find_positions(CellType.TARGET.value)
+        return self.find_positions(CellType.TARGET)
 
     def reset(self):
-        """Reset the environment to the initial state."""
-        start_positions = self.find_positions(CellType.START.value)
+        """Reset the environment to the initial state and return the starting state."""
+        start_positions = self.find_positions(CellType.START)
         if not start_positions:
             raise ValueError("No starting position in layout")
         self.state = start_positions[0]
@@ -120,33 +123,33 @@ class GridWorldEnv(gym.Env):
     def step(self, action):
         """
         Perform an action in the environment and return the result.
-
         Parameters:
         action (int): The action to be performed.
         """
         action_enum = Action(action)
         assert self.action_space.contains(action), f"{action_enum} is an invalid action"
 
+        # Determine movement based on action and success probability
         if random.random() < self.success_prob:
             move = self._action_to_move(action_enum)
         else:
             move = self._random_side_move(action_enum)
 
+        # Calculate new state and check if it's valid
         new_state = (self.state[0] + move[0], self.state[1] + move[1])
-
         if 0 <= new_state[0] < self.grid_size_x and 0 <= new_state[1] < self.grid_size_y and \
-        self.layout[new_state[0], new_state[1]] != CellType.OBSTACLE.value:
+           self.layout[new_state[0], new_state[1]] != CellType.OBSTACLE:
             self.state = new_state
 
+        # Determine reward and if the episode is done
         reward = self.get_reward(self.state)
-        done = self.layout[self.state[0], self.state[1]] == CellType.TARGET.value
+        done = self.layout[self.state[0], self.state[1]] == CellType.TARGET
 
         return np.array(self.state), reward, done, {}
 
     def _action_to_move(self, action_enum):
         """
         Map an action enum to a movement (delta x, delta y).
-
         Parameters:
         action_enum (Action): The action enum to be converted to a move.
         """
@@ -161,7 +164,6 @@ class GridWorldEnv(gym.Env):
     def _random_side_move(self, action_enum):
         """
         Determine a random side move for the slipping action.
-
         Parameters:
         action_enum (Action): The action enum to determine the side move for.
         """
@@ -173,26 +175,27 @@ class GridWorldEnv(gym.Env):
     def render(self, mode='human'):
         """
         Render the environment's current state.
-
         Parameters:
         mode (str): The mode to render in ('human').
         """
         if mode == 'human':
             colors = {
-                CellType.EMPTY.value: (192, 192, 192),
-                CellType.TARGET.value: (255, 215, 0),
-                CellType.START.value: (0, 0, 255),
-                CellType.OBSTACLE.value: (0, 0, 0),
-                CellType.TREASURE.value: (0, 255, 0),
-                CellType.TRAP.value: (255, 0, 0)
+                CellType.EMPTY: (192, 192, 192),
+                CellType.TARGET: (255, 215, 0),
+                CellType.START: (0, 0, 255),
+                CellType.OBSTACLE: (0, 0, 0),
+                CellType.TREASURE: (0, 255, 0),
+                CellType.TRAP: (255, 0, 0)
             }
-
+            # Render each cell with the appropriate color
             for i in range(self.grid_size_x):
                 for j in range(self.grid_size_y):
-                    color = colors[self.layout[i, j]]
+                    cell_type = self.layout[i, j]
+                    color = colors[cell_type]
                     rect = pygame.Rect(j * 50, i * 50, 50, 50)
                     pygame.draw.rect(self.screen, color, rect)
 
+            # Render the agent's current position
             agent_color = (255, 255, 255)
             agent_rect = pygame.Rect(self.state[1] * 50, self.state[0] * 50, 50, 50)
             pygame.draw.rect(self.screen, agent_color, agent_rect)
