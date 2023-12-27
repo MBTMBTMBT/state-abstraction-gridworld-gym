@@ -232,9 +232,9 @@ class GridWorldEnv(gym.Env):
         action_enum (Action): The action enum to determine the side move for.
         """
         if action_enum in [Action.UP, Action.DOWN]:
-            return random.choice([(-1, 0), (1, 0)])
+            return random.choice([(0, -1), (0, -1)])
         else:
-            return random.choice([(0, -1), (0, 1)])
+            return random.choice([(-1, 0), (1, 0)])
 
     def render(self, mode='human'):
         """
