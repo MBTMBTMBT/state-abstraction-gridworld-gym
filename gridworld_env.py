@@ -43,11 +43,11 @@ class GridWorldEnv(gym.Env):
         # Define default rewards for each cell type
         default_rewards_map = {
             CellType.TARGET: 0.0,
-            CellType.START: -1.0,
-            CellType.OBSTACLE: -1.0,
+            CellType.START: -0.1,
+            CellType.OBSTACLE: 0.0,
             CellType.TREASURE: 5.0,
             CellType.TRAP: -20.0,
-            CellType.EMPTY: -1.0
+            CellType.EMPTY: -0.1
         }
 
         # Use the provided rewards map or default if none is provided
@@ -146,6 +146,70 @@ class GridWorldEnv(gym.Env):
         done = self.layout[self.state[0], self.state[1]] == CellType.TARGET
 
         return np.array(self.state), reward, done, {}
+    
+    def is_valid_state(self, state):
+        """
+        Check if a state (x, y) is a valid state in the grid.
+
+        Parameters:
+        x (int): The x-coordinate.
+        y (int): The y-coordinate.
+
+        Returns:
+        bool: True if the state is valid, False otherwise.
+        """
+        if 0 <= state[0] < self.grid_size_x and 0 <= state[1] < self.grid_size_y:
+            return self.layout[state[0], state[1]] != CellType.OBSTACLE
+        return False
+    
+    def get_transitions(self, state, action):
+        """
+        Get the possible transitions for a given state and action for MDP estimation.
+
+        Parameters:
+        state (tuple): The current state (x, y).
+        action (Action): The action to be performed.
+
+        Returns:
+        List of tuples: Each tuple contains (next_state, probability).
+        """
+        transitions = []
+        x, y = state
+
+        # Define possible moves
+        moves = {
+            Action.UP: (-1, 0),
+            Action.DOWN: (1, 0),
+            Action.LEFT: (0, -1),
+            Action.RIGHT: (0, 1)
+        }
+
+        # Calculate the next state for the action
+        move = moves.get(action)
+        new_x, new_y = x + move[0], y + move[1]
+
+        # Handle the primary action
+        if self.is_valid_state((new_x, new_y)):
+            next_state = (new_x, new_y)
+        else:
+            # If the move is not valid, the agent stays in the same state
+            next_state = state
+        
+        # Add the primary transition with success probability
+        transitions.append((next_state, self.success_prob))
+
+        # Handle slipping probabilities
+        slip_prob = (1.0 - self.success_prob) / 2
+        for slip_move in [(move[1], move[0]), (-move[1], -move[0])]:  # Perpendicular moves
+            new_x, new_y = x + slip_move[0], y + slip_move[1]
+            if self.is_valid_state((new_x, new_y)):
+                next_state = (new_x, new_y)
+            else:
+                # If the slip move is not valid, the agent stays in the same state
+                next_state = state
+            transitions.append((next_state, slip_prob))
+
+        return transitions
 
     def _action_to_move(self, action_enum):
         """
