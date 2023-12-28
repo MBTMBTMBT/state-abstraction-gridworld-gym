@@ -2,6 +2,7 @@ from gridworld_env import GridWorldEnv, Action, CellType
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import math
 
 
 class SingleStatePolicy:
@@ -21,8 +22,15 @@ class SingleStatePolicy:
         """Update the policy from a list of action probabilities."""
         self.up, self.down, self.left, self.right = values
 
-    def __repr__(self):
+    def __str__(self):
         return f"Policy(up={self.up}, down={self.down}, left={self.left}, right={self.right})"
+
+    @staticmethod
+    def kl_divergence(policy_at_state_p: 'SingleStatePolicy', policy_at_state_q: 'SingleStatePolicy') -> float:
+        sum_v = 0.0
+        for action_p, action_q in zip(policy_at_state_p.to_list(), policy_at_state_q.to_list()):
+            sum_v += action_p * math.log2(action_p/action_q)
+        return sum_v
 
 
 class GridWorldPolicy:
