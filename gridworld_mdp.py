@@ -63,7 +63,7 @@ class GridWorldMDP:
         Returns:
         PolicyGrid: The policy grid representing the optimal policy.
         """
-        policy_grid = GridWorldPolicies(self.env)
+        policy_grid = GridWorldPolicy(self.env)
         for i in range(self.env.grid_size_x):
             for j in range(self.env.grid_size_y):
                 state = (i, j)

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
 
-class GridWorldPolicy:
+class SingleStatePolicy:
     """Represents the policy for a single state in the GridWorld environment."""
 
     def __init__(self, up=0.0, down=0.0, left=0.0, right=0.0) -> None:
@@ -25,7 +25,7 @@ class GridWorldPolicy:
         return f"Policy(up={self.up}, down={self.down}, left={self.left}, right={self.right})"
 
 
-class GridWorldPolicies:
+class GridWorldPolicy:
     """Manages the policy for each state in the GridWorld environment."""
 
     def __init__(self, grid_world_env: GridWorldEnv, default_policy=(0.25, 0.25, 0.25, 0.25)) -> None:
@@ -35,7 +35,7 @@ class GridWorldPolicies:
         # Initialize policy grid with default policy for each state
         for x in range(self.grid_world_env.grid_size_x):
             for y in range(self.grid_world_env.grid_size_y):
-                self.policy_grid[(x, y)] = GridWorldPolicy(*default_policy)
+                self.policy_grid[(x, y)] = SingleStatePolicy(*default_policy)
 
     def get_policy(self, state: tuple):
         """Get the policy for a specific state."""
@@ -53,7 +53,7 @@ class GridWorldPolicies:
 
     def interpolate(self, gamma):
         """Interpolate policies based on gamma, creating a new PolicyGrid."""
-        new_policy_grid = GridWorldPolicies(self.grid_world_env)
+        new_policy_grid = GridWorldPolicy(self.grid_world_env)
         num_actions = len(Action)  # Number of possible actions
 
         for state, policy in self.policy_grid.items():
@@ -137,7 +137,7 @@ class GridWorldPolicies:
 # Example usage
 if __name__ == "__main__":
     env = GridWorldEnv('layout.txt')
-    policy_grid = GridWorldPolicies(env)
+    policy_grid = GridWorldPolicy(env)
     # Example of setting a specific policy for a state
     policy_grid.policy_grid[(1, 1)].update_from_list([0.5, 0.1, 0.2, 0.2])
     # Visualize or use the policy grid as needed
