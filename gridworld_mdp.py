@@ -27,7 +27,7 @@ class GridWorldMDP:
         while True:
             delta = 0
             # Create a copy of the current value function
-            V_copy = np.copy(self.value_function)
+            v_copy = np.copy(self.value_function)
             for i in range(self.env.grid_size_x):
                 for j in range(self.env.grid_size_y):
                     state = (i, j)
@@ -45,13 +45,13 @@ class GridWorldMDP:
                         transitions = self.env.get_transitions(state, a)
                         # Sum over all possible next states
                         for next_state, prob in transitions:
-                            expected_value += prob * V_copy[next_state]
+                            expected_value += prob * v_copy[next_state]
                         # Select the max value across all actions
                         max_value = max(max_value, expected_value)
                     # Update the value function for the state
                     self.value_function[i, j] = self.env.get_reward(state) + self.gamma * max_value
                     # Update the delta
-                    delta = max(delta, abs(V_copy[i, j] - self.value_function[i, j]))
+                    delta = max(delta, abs(v_copy[i, j] - self.value_function[i, j]))
             # Check for convergence
             if delta < theta:
                 break
@@ -63,7 +63,7 @@ class GridWorldMDP:
         Returns:
         PolicyGrid: The policy grid representing the optimal policy.
         """
-        policy_grid = PolicyGrid(self.env)
+        policy_grid = GridWorldPolicies(self.env)
         for i in range(self.env.grid_size_x):
             for j in range(self.env.grid_size_y):
                 state = (i, j)

@@ -3,8 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
-class Policy:
+
+class GridWorldPolicy:
     """Represents the policy for a single state in the GridWorld environment."""
+
     def __init__(self, up=0.0, down=0.0, left=0.0, right=0.0) -> None:
         self.up = up
         self.down = down
@@ -23,8 +25,9 @@ class Policy:
         return f"Policy(up={self.up}, down={self.down}, left={self.left}, right={self.right})"
 
 
-class PolicyGrid:
+class GridWorldPolicies:
     """Manages the policy for each state in the GridWorld environment."""
+
     def __init__(self, grid_world_env: GridWorldEnv, default_policy=(0.25, 0.25, 0.25, 0.25)) -> None:
         self.policy_grid = {}
         self.grid_world_env = grid_world_env
@@ -32,7 +35,7 @@ class PolicyGrid:
         # Initialize policy grid with default policy for each state
         for x in range(self.grid_world_env.grid_size_x):
             for y in range(self.grid_world_env.grid_size_y):
-                self.policy_grid[(x, y)] = Policy(*default_policy)
+                self.policy_grid[(x, y)] = GridWorldPolicy(*default_policy)
 
     def get_policy(self, state: tuple):
         """Get the policy for a specific state."""
@@ -50,7 +53,7 @@ class PolicyGrid:
 
     def interpolate(self, gamma):
         """Interpolate policies based on gamma, creating a new PolicyGrid."""
-        new_policy_grid = PolicyGrid(self.grid_world_env)
+        new_policy_grid = GridWorldPolicies(self.grid_world_env)
         num_actions = len(Action)  # Number of possible actions
 
         for state, policy in self.policy_grid.items():
@@ -59,19 +62,19 @@ class PolicyGrid:
             new_policy_grid.policy_grid[state].update_from_list(interpolated_policy_list)
 
         return new_policy_grid
-    
+
     def visualize(self):
         """Visualize the policy grid on the GridWorld layout."""
         fig, ax = plt.subplots()
 
         # Define colors for each cell type
         cell_colors = {
-            CellType.EMPTY: (192/255, 192/255, 192/255),    # Grey
-            CellType.TARGET: (255/255, 215/255, 0/255),     # Yellow
-            CellType.START: (0/255, 0/255, 255/255),        # Blue
-            CellType.OBSTACLE: (0/255, 0/255, 0/255),       # Black
-            CellType.TREASURE: (0/255, 255/255, 0/255),     # Green
-            CellType.TRAP: (255/255, 0/255, 0/255)          # Red
+            CellType.EMPTY: (192 / 255, 192 / 255, 192 / 255),  # Grey
+            CellType.TARGET: (255 / 255, 215 / 255, 0 / 255),  # Yellow
+            CellType.START: (0 / 255, 0 / 255, 255 / 255),  # Blue
+            CellType.OBSTACLE: (0 / 255, 0 / 255, 0 / 255),  # Black
+            CellType.TREASURE: (0 / 255, 255 / 255, 0 / 255),  # Green
+            CellType.TRAP: (255 / 255, 0 / 255, 0 / 255)  # Red
         }
 
         # Define a mapping from cell type to integer
@@ -102,7 +105,6 @@ class PolicyGrid:
 
         plt.show()
 
-
     def _draw_arrows(self, ax, state, policy):
         """Helper method to draw policy arrows on the grid, skipping obstacles and targets."""
         i, j = state
@@ -113,25 +115,29 @@ class PolicyGrid:
             return
 
         arrow_scale = 0.3  # Scale factor for the arrow size
-        head_width = 0.1   # Width of the arrow head
+        head_width = 0.1  # Width of the arrow head
         head_length = 0.1  # Length of the arrow head
         arrow_color = 'white'  # Color of the arrow
 
         # Draw arrows based on the policy probabilities
         if policy.up > 0:
-            ax.arrow(j, i, 0, -arrow_scale * policy.up, head_width=head_width, head_length=head_length, fc=arrow_color, ec=arrow_color)
+            ax.arrow(j, i, 0, -arrow_scale * policy.up, head_width=head_width, head_length=head_length, fc=arrow_color,
+                     ec=arrow_color)
         if policy.down > 0:
-            ax.arrow(j, i, 0, arrow_scale * policy.down, head_width=head_width, head_length=head_length, fc=arrow_color, ec=arrow_color)
+            ax.arrow(j, i, 0, arrow_scale * policy.down, head_width=head_width, head_length=head_length, fc=arrow_color,
+                     ec=arrow_color)
         if policy.left > 0:
-            ax.arrow(j, i, -arrow_scale * policy.left, 0, head_width=head_width, head_length=head_length, fc=arrow_color, ec=arrow_color)
+            ax.arrow(j, i, -arrow_scale * policy.left, 0, head_width=head_width, head_length=head_length,
+                     fc=arrow_color, ec=arrow_color)
         if policy.right > 0:
-            ax.arrow(j, i, arrow_scale * policy.right, 0, head_width=head_width, head_length=head_length, fc=arrow_color, ec=arrow_color)
+            ax.arrow(j, i, arrow_scale * policy.right, 0, head_width=head_width, head_length=head_length,
+                     fc=arrow_color, ec=arrow_color)
 
 
 # Example usage
 if __name__ == "__main__":
     env = GridWorldEnv('layout.txt')
-    policy_grid = PolicyGrid(env)
+    policy_grid = GridWorldPolicies(env)
     # Example of setting a specific policy for a state
     policy_grid.policy_grid[(1, 1)].update_from_list([0.5, 0.1, 0.2, 0.2])
     # Visualize or use the policy grid as needed
