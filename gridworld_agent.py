@@ -1,15 +1,15 @@
 import numpy as np
-import gym
-from gym import spaces
 import time
-from gridworld_env import *
-from gridworld_policy import *
-from gridworld_mdp import *
+import tqdm
+from gridworld_mdp import GridWorldPolicy
+from gridworld_env import GridWorldEnv, Action
+from gridworld_mdp import GridWorldMDP
+
 
 class GridWorldAgent:
-    def __init__(self, env, policy_grid):
+    def __init__(self, env: GridWorldEnv, grid_world_policy: GridWorldPolicy):
         self.env = env
-        self.policy_grid = policy_grid
+        self.policy_grid = grid_world_policy
 
     def choose_action(self, state):
         # Retrieve the policy for the current state
@@ -49,6 +49,28 @@ class GridWorldAgent:
         
         return total_reward
 
+    def sample_stationary_state_distribution(self, num_steps=50, num_iterations=500):
+        total_steps = 0
+        stationary_state_distribution = np.zeros(shape=(self.env.grid_size_x, self.env.grid_size_y))
+        for _ in tqdm.tqdm(range(num_iterations)):
+            state = self.env.reset()
+            for _ in range(num_steps):
+                stationary_state_distribution[tuple(state)] += 1
+                total_steps += 1
+                action = self.choose_action(tuple(state))
+                next_state, reward, done, _ = self.env.step(action.value)
+
+                # Update the state
+                state = next_state
+
+                # Exit if we reach a terminal state
+                if done:
+                    stationary_state_distribution[tuple(state)] += 1
+                    total_steps += 1
+                    break
+        stationary_state_distribution /= total_steps
+        return stationary_state_distribution
+
 
 if __name__ == "__main__":
     # Create a GridWorldEnv environment
@@ -61,5 +83,8 @@ if __name__ == "__main__":
     agent = GridWorldAgent(env, policy_grid)
 
     # Simulate the agent's behavior for a specified number of steps
-    total_reward = agent.simulate(num_steps=100, render=True, refresh=0.5)
-    print(f"Total reward from simulation: {total_reward}")
+    # total_reward = agent.simulate(num_steps=100, render=True, refresh=0.5)
+    # print(f"Total reward from simulation: {total_reward}")
+
+    stationary_state_distribution = agent.sample_stationary_state_distribution(num_steps=50, num_iterations=int(1e5))
+    print(stationary_state_distribution)
