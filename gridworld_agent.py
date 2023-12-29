@@ -7,6 +7,35 @@ from gridworld_mdp import GridWorldMDP
 
 
 class GridWorldAgent:
+    """
+
+    Class: GridWorldAgent
+
+    The GridWorldAgent class represents an agent in the GridWorld environment. It is responsible for choosing actions based on a given policy and simulating the agent's behavior in the environment
+    *.
+
+    Attributes:
+    - env: The GridWorldEnv object representing the environment the agent is in.
+    - policy_grid: The GridWorldPolicy object representing the policy to be followed by the agent.
+
+    Methods:
+    - __init__(self, env: GridWorldEnv, grid_world_policy: GridWorldPolicy)
+        Constructs a new GridWorldAgent object with the given environment and policy_grid.
+
+    - choose_action(self, state)
+        Chooses an action based on the policy probabilities for the given state.
+
+    - simulate(self, num_steps=100, render=False, refresh=0)
+        Simulates the agent's behavior in the environment for a specified number of steps.
+        Returns the total reward accumulated during the simulation.
+
+    - sample_stationary_state_distribution(self, num_steps=50, num_iterations=500)
+        Samples the stationary state distribution of the agent's behavior in the environment.
+        Returns a numpy array representing the stationary state distribution.
+
+    Note: This class assumes the existence of other classes such as GridWorldEnv and GridWorldPolicy, which are not defined in this documentation.
+
+    """
     def __init__(self, env: GridWorldEnv, grid_world_policy: GridWorldPolicy):
         self.env = env
         self.policy_grid = grid_world_policy
