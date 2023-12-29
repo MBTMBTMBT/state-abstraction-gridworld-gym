@@ -6,8 +6,22 @@ import math
 
 
 class SingleStatePolicy:
-    """Represents the policy for a single state in the GridWorld environment."""
+    """
+    The SingleStatePolicy class represents a policy for a single state in a Markov Decision Process (MDP).
 
+    Attributes:
+    - up (float): The probability of taking the "up" action.
+    - down (float): The probability of taking the "down" action.
+    - left (float): The probability of taking the "left" action.
+    - right (float): The probability of taking the "right" action.
+
+    Methods:
+    - to_list(): Converts the policy to a list of action probabilities.
+    - update_from_list(values): Updates the policy from a list of action probabilities.
+    - __str__(): Returns a string representation of the policy.
+    - kl_divergence(policy_at_state_p, policy_at_state_q): Computes the Kullback-Leibler divergence between two policies.
+
+    """
     def __init__(self, up=0.0, down=0.0, left=0.0, right=0.0) -> None:
         self.up = up
         self.down = down
@@ -34,8 +48,28 @@ class SingleStatePolicy:
 
 
 class GridWorldPolicy:
-    """Manages the policy for each state in the GridWorld environment."""
+    """
+    GridWorldPolicy class represents a policy for a grid world environment.
 
+    Attributes:
+        - policy_grid (dict): A dictionary that maps states to individual state policies.
+        - grid_world_env (GridWorldEnv): The grid world environment associated with the policy.
+
+    Methods:
+        - __init__(grid_world_env: GridWorldEnv, default_policy=(0.25, 0.25, 0.25, 0.25)):
+            Initializes a new GridWorldPolicy instance.
+        - get_policy(state: tuple) -> SingleStatePolicy:
+            Returns the policy for a specific state.
+        - action_probabilities(state: tuple) -> dict[Action, float]:
+            Returns the probabilities of taking each action given a state.
+        - interpolate(gamma):
+            Interpolates policies based on gamma, creating a new PolicyGrid.
+        - visualize():
+            Visualizes the policy grid on the GridWorld layout.
+        - _draw_arrows(ax, state, policy):
+            Helper method to draw policy arrows on the grid.
+
+    """
     def __init__(self, grid_world_env: GridWorldEnv, default_policy=(0.25, 0.25, 0.25, 0.25)) -> None:
         self.policy_grid = {}
         self.grid_world_env = grid_world_env
