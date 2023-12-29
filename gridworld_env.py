@@ -25,19 +25,42 @@ class CellType(Enum):
 
 
 class GridWorldEnv(gym.Env):
-    """A custom environment for GridWorld compatible with OpenAI Gym."""
+    """
+    GridWorldEnv
 
+    An environment for grid world navigation tasks.
+
+    Attributes:
+    metadata (dict): Metadata for the environment.
+    layout (ndarray): The grid layout of the environment.
+    grid_size_x (int): The size of the grid along the x-axis.
+    grid_size_y (int): The size of the grid along the y-axis.
+    action_space (gym.spaces.Discrete): The action space of the environment.
+    observation_space (gym.spaces.Box): The observation space of the environment.
+    state (tuple): The current state of the agent.
+    success_prob (float): The probability of successfully taking an action.
+    window_size (tuple): The size of the rendering window.
+    screen (pygame.Surface): The Pygame screen object for rendering.
+    clock (pygame.time.Clock): The Pygame clock object for rendering.
+
+    Methods:
+    __init__(layout_file, success_prob=0.8, rewards_map=None)
+    _load_layout(filename)
+    get_reward(state)
+    get_type(state)
+    find_positions(cell_type)
+    get_terminal_states()
+    reset()
+    step(action)
+    is_valid_state(state)
+    get_transitions(state, action)
+    _action_to_move(action_enum)
+    _random_side_move(action_enum)
+    render(mode='human')
+    """
     metadata = {'render.modes': ['human']}
 
     def __init__(self, layout_file, success_prob=0.8, rewards_map=None):
-        """
-        Initialize the GridWorld environment.
-        
-        Parameters:
-        layout_file (str): The file path for the grid layout.
-        success_prob (float): Probability of successful action movement.
-        rewards_map (dict, optional): Custom rewards map for different cell types.
-        """
         super(GridWorldEnv, self).__init__()
 
         # Define default rewards for each cell type
