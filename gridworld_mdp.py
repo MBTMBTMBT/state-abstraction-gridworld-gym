@@ -4,7 +4,29 @@ from gridworld_policy import *
 
 
 class GridWorldMDP:
-    """Class to represent a Markov Decision Process for GridWorldEnv."""
+    """
+    Class to represent a Markov Decision Process for GridWorldEnv.
+
+    ...
+
+    Attributes
+    ----------
+    env : GridWorldEnv
+        The GridWorld environment.
+    gamma : float
+        The discount factor for future rewards.
+    value_function : np.array
+        2D numpy array containing the value of each state.
+
+    Methods
+    -------
+    value_iteration(theta=1e-10):
+        Perform value iteration to compute the optimal value function.
+    derive_policy():
+        Derive the optimal policy from the value function.
+    visualize():
+        Visualize the grid with the values of each state.
+    """
 
     def __init__(self, env, gamma=0.99):
         """
