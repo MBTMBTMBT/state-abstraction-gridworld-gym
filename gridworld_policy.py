@@ -43,7 +43,7 @@ class SingleStatePolicy:
     def kl_divergence(policy_at_state_p: 'SingleStatePolicy', policy_at_state_q: 'SingleStatePolicy') -> float:
         sum_v = 0.0
         for action_p, action_q in zip(policy_at_state_p.to_list(), policy_at_state_q.to_list()):
-            sum_v += action_p * math.log2(action_p/action_q)
+            sum_v += action_p * math.log2(action_p/(action_q + 1e-100) + 1e-100)
         return sum_v
 
 
