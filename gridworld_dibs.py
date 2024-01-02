@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import copy
 
 from gridworld_agent import GridWorldAgent
-from gridworld_env import GridWorldEnv
+from gridworld_env import GridWorldEnv, CellType
 from gridworld_policy import GridWorldPolicy, SingleStatePolicy
 
 
@@ -84,7 +84,7 @@ class GridWorldDibs:
                     prob_sum = 0.0
                     for x1 in range(self.grid_size_x):
                         for y1 in range(self.grid_size_y):
-                            if np.array_equal(abs_states_copy[x1, y1], np.array([x, y])):
+                            if np.array_equal(abs_states[x, y], np.array(abs_states[x1, y1])):
                                 prob_sum += abs_stationary_distributions[x1, y1]
                     abs_stationary_distributions_copy[x, y] = prob_sum
             max_delta = np.max(np.abs(abs_stationary_distributions - abs_stationary_distributions_copy))
@@ -98,7 +98,7 @@ class GridWorldDibs:
                     numerator, denominator = np.zeros_like(np.array(state_policy_abs.to_list())), 1e-100
                     for x1 in range(self.grid_size_x):
                         for y1 in range(self.grid_size_y):
-                            if np.array_equal(abs_states[x1, y1], np.array(abs_states[x, y])):
+                            if np.array_equal(abs_states[x, y], np.array(abs_states[x1, y1])):
                                 state1 = (x1, y1)
                                 numerator += np.array(self.demo_policy.get_policy(state1).to_list()) * abs_stationary_distributions[x1, y1]
                                 denominator += abs_stationary_distributions[x1, y1]
@@ -138,7 +138,40 @@ class GridWorldDibs:
         # Draw abstract states
         ax.imshow(colors)
 
+        # Display policy as arrows on the grid
+        for state, policy in abs_policy.policy_grid.items():
+            self._draw_arrows(abs_policy, ax, state, policy)
+
         plt.show()
+
+    @staticmethod
+    def _draw_arrows(abs_policy, ax, state, policy):
+        """Helper method to draw policy arrows on the grid, skipping obstacles and targets."""
+        i, j = state
+        cell_type = abs_policy.grid_world_env.layout[i, j]
+
+        # Skip drawing arrows for obstacles and targets
+        if cell_type in [CellType.OBSTACLE, CellType.TARGET]:
+            return
+
+        arrow_scale = 0.3  # Scale factor for the arrow size
+        head_width = 0.1  # Width of the arrow head
+        head_length = 0.1  # Length of the arrow head
+        arrow_color = 'white'  # Color of the arrow
+
+        # Draw arrows based on the policy probabilities
+        if policy.up > 0:
+            ax.arrow(j, i, 0, -arrow_scale * policy.up, head_width=head_width, head_length=head_length, fc=arrow_color,
+                     ec=arrow_color)
+        if policy.down > 0:
+            ax.arrow(j, i, 0, arrow_scale * policy.down, head_width=head_width, head_length=head_length, fc=arrow_color,
+                     ec=arrow_color)
+        if policy.left > 0:
+            ax.arrow(j, i, -arrow_scale * policy.left, 0, head_width=head_width, head_length=head_length,
+                     fc=arrow_color, ec=arrow_color)
+        if policy.right > 0:
+            ax.arrow(j, i, arrow_scale * policy.right, 0, head_width=head_width, head_length=head_length,
+                     fc=arrow_color, ec=arrow_color)
 
 
 if __name__ == '__main__':
@@ -148,9 +181,10 @@ if __name__ == '__main__':
     env = GridWorldEnv('layout.txt')
     mdp = GridWorldMDP(env)
     mdp.value_iteration()
-    policy_grid = mdp.derive_policy()
+    policy_grid = mdp.derive_policy().add_noise(0.25)
+    # policy_grid.interpolate(gamma=0.8)
 
     dibs = GridWorldDibs(env, policy_grid)
-    abs_states, abs_policy = dibs.run_dibs(beta=1e-10, threshold=1e-10, max_iterations=100)
-    print(abs_states)
+    abs_states, abs_policy = dibs.run_dibs(beta=1e-10, threshold=0.25e-100, max_iterations=1000)
+    # print(abs_states)
     dibs.visualize(abs_states, abs_policy)
