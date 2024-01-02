@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import math
+import random
 
 
 class SingleStatePolicy:
@@ -93,7 +94,7 @@ class GridWorldPolicy:
             Action.RIGHT: policy_at_state.right
         }
 
-    def interpolate(self, gamma):
+    def interpolate(self, gamma: float) -> 'GridWorldPolicy':
         """Interpolate policies based on gamma, creating a new PolicyGrid."""
         new_policy_grid = GridWorldPolicy(self.grid_world_env)
         num_actions = len(Action)  # Number of possible actions
@@ -104,6 +105,42 @@ class GridWorldPolicy:
             new_policy_grid.policy_grid[state].update_from_list(interpolated_policy_list)
 
         return new_policy_grid
+
+    def add_noise(self, noise_level: float) -> 'GridWorldPolicy':
+        """
+        Generates a new GridWorldPolicy instance with random noise added to the policy of each state.
+
+        Parameters:
+        - noise_level (float): The level of noise, between 0 and 1, representing the maximum percentage change.
+
+        Returns:
+        - GridWorldPolicy: A new GridWorldPolicy instance with noisy policies.
+        """
+        # Create a new GridWorldPolicy instance
+        new_policy = GridWorldPolicy(self.grid_world_env)
+
+        # Iterate over each state in the policy grid
+        for state, policy in self.policy_grid.items():
+            # Get the current policy as a list
+            current_policy_list = policy.to_list()
+            noisy_policy_list = []
+
+            # Add noise to each action's probability
+            for prob in current_policy_list:
+                # Add a small constant factor to avoid zero probability
+                constant_noise = random.uniform(0, noise_level / len(current_policy_list))
+                noise = random.uniform(-noise_level, noise_level) * prob
+                noisy_prob = min(max(prob + noise + constant_noise, 0), 1)
+                noisy_policy_list.append(noisy_prob)
+
+            # Normalize to ensure the sum of probabilities is 1
+            total = sum(noisy_policy_list)
+            normalized_policy_list = [p / total for p in noisy_policy_list]
+
+            # Update the new policy grid with the noisy policy
+            new_policy.policy_grid[state] = SingleStatePolicy(*normalized_policy_list)
+
+        return new_policy
 
     def visualize(self):
         """Visualize the policy grid on the GridWorld layout."""
