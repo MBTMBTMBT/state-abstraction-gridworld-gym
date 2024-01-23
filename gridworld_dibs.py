@@ -32,7 +32,7 @@ class GridWorldDibs:
         self.demo_agent = GridWorldAgent(env, demo_policy)
         self.demo_stationary_distributions = self.demo_agent.sample_stationary_state_distribution()
 
-    def run_dibs(self, beta: float, threshold: float, max_iterations: int):
+    def run_dibs(self, beta: float, max_iterations: int, add_policy_noise=0.0):
         # Init abs states
         # x and y for positions, 2 for it saves another coord:
         abs_states = np.zeros(shape=(self.grid_size_x, self.grid_size_y, 2))
@@ -50,6 +50,7 @@ class GridWorldDibs:
         # init abs policy:
         abs_policy = GridWorldPolicy(self.env)  # Actions are uniformly distributed by default.
         abs_policy.policy_grid = copy.deepcopy(self.demo_policy.policy_grid)
+        abs_policy = abs_policy.add_noise(add_policy_noise)
 
         for _ in tqdm.tqdm(range(max_iterations)):
             abs_states_copy = np.copy(abs_states)
@@ -88,6 +89,7 @@ class GridWorldDibs:
                                 prob_sum += abs_stationary_distributions[x1, y1]
                     abs_stationary_distributions_copy[x, y] = prob_sum
             max_delta = np.max(np.abs(abs_stationary_distributions - abs_stationary_distributions_copy))
+            abs_states_change = bool(np.sum(np.abs(abs_states_copy - abs_states)))
             abs_states = abs_states_copy
             abs_stationary_distributions = abs_stationary_distributions_copy
             pass
@@ -103,9 +105,11 @@ class GridWorldDibs:
                                 numerator += np.array(self.demo_policy.get_policy(state1).to_list()) * abs_stationary_distributions[x1, y1]
                                 denominator += abs_stationary_distributions[x1, y1]
                     policy_ = list(numerator / denominator)
-                    abs_policy.policy_grid[state].update_from_list(list(numerator / denominator))
+                    abs_policy.policy_grid[state].update_from_list(policy_)
 
-            if max_delta < threshold:
+            # if max_delta < threshold:
+            #     break
+            if not abs_states_change:
                 break
 
         return abs_states, abs_policy
@@ -119,7 +123,7 @@ class GridWorldDibs:
         # Create colormap for the abstract states
         unique_pairs = np.unique(abs_states.reshape(-1, 2), axis=0)
         num_unique_pairs = len(unique_pairs)
-        cmap = plt.cm.get_cmap('tab20', num_unique_pairs)  # Original colormap for valid cells
+        cmap = plt.cm.get_cmap('viridis', num_unique_pairs)  # Original colormap for valid cells
 
         # Initialize an array to store RGB color for each cell
         colors = np.zeros((abs_states.shape[0], abs_states.shape[1], 3))
@@ -177,14 +181,19 @@ class GridWorldDibs:
 if __name__ == '__main__':
     from gridworld_mdp import GridWorldMDP
 
+    policy_noise = 1e-10
+    policy_noise = 0
+
     # Create a GridWorldEnv environment
     env = GridWorldEnv('layout.txt')
     mdp = GridWorldMDP(env)
     mdp.value_iteration()
-    policy_grid = mdp.derive_policy().add_noise(0.25)
+    policy_grid = mdp.derive_policy().add_noise(policy_noise)
     # policy_grid.interpolate(gamma=0.8)
 
     dibs = GridWorldDibs(env, policy_grid)
-    abs_states, abs_policy = dibs.run_dibs(beta=1e-10, threshold=0.25e-100, max_iterations=1000)
+    abs_states, abs_policy = dibs.run_dibs(beta=10, max_iterations=500, add_policy_noise=policy_noise)
     # print(abs_states)
     dibs.visualize(abs_states, abs_policy)
+    print(abs_states)
+    pass
